@@ -1,0 +1,18 @@
+# Executables
+orderbook
+*.out
+
+# Object files
+*.o
+*.obj
+
+# Build directories
+build/
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
