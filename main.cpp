@@ -6,12 +6,14 @@
 #include <algorithm>
 
 enum class Side { Buy, Sell };
+enum class Type { Limit, Market };
 
 struct Order {
     int      id;
     Side     side;
     int64_t  price;
     int      qty;
+    Type     type = Type::Limit;
 };
 
 struct Trade {
@@ -32,7 +34,7 @@ std::vector<Trade> match(Book& book, Order order) {
     if (order.side == Side::Buy) {
         while (order.qty > 0 && !book.asks.empty()) {
             auto best = book.asks.begin();
-            if (order.price < best->first) break;
+            if (order.type == Type::Limit && order.price < best->first) break;
 
             auto& level = best->second;
             while (order.qty > 0 && !level.empty()) {
@@ -45,13 +47,13 @@ std::vector<Trade> match(Book& book, Order order) {
             }
             if (level.empty()) book.asks.erase(best);
         }
-        if (order.qty > 0)
+        if (order.qty > 0 && order.type == Type::Limit)
             book.bids[order.price].push_back(order);
 
     } else {
         while (order.qty > 0 && !book.bids.empty()) {
             auto best = book.bids.begin();
-            if (order.price > best->first) break;
+            if (order.type == Type::Limit && order.price > best->first) break;
 
             auto& level = best->second;
             while (order.qty > 0 && !level.empty()) {
@@ -64,7 +66,7 @@ std::vector<Trade> match(Book& book, Order order) {
             }
             if (level.empty()) book.bids.erase(best);
         }
-        if (order.qty > 0)
+        if (order.qty > 0 && order.type == Type::Limit)
             book.asks[order.price].push_back(order);
     }
 
@@ -91,16 +93,25 @@ int main() {
     Book book;
     int  next_id = 1;
 
-    auto submit = [&](Side side, int64_t price, int qty) {
-        Order o{next_id++, side, price, qty};
-        std::cout << (side == Side::Buy ? "BUY " : "SELL")
-                  << "  id=" << o.id << "  px=" << price << "  qty=" << qty << "\n";
-        for (const auto& t : match(book, o)) {
+    auto submit = [&](Side side, int64_t price, int qty, Type type = Type::Limit) {
+        Order o{next_id++, side, price, qty, type};
+        std::cout << (side == Side::Buy ? "BUY " : "SELL");
+        if (type == Type::Market)
+            std::cout << "  id=" << o.id << "  px=MKT  qty=" << qty << "\n";
+        else
+            std::cout << "  id=" << o.id << "  px=" << price << "  qty=" << qty << "\n";
+
+        auto trades = match(book, o);
+        int filled = 0;
+        for (const auto& t : trades) {
             std::cout << "  -> TRADE  buyer=" << t.buyer_id
                       << "  seller="          << t.seller_id
                       << "  px="              << t.price
                       << "  qty="             << t.qty << "\n";
+            filled += t.qty;
         }
+        if (type == Type::Market && filled < qty)
+            std::cout << "  -> CANCELLED  residual qty=" << (qty - filled) << "\n";
     };
 
     submit(Side::Buy,  100, 10);
@@ -113,6 +124,17 @@ int main() {
     print_book(book);
 
     submit(Side::Buy,  101,  6);   // crosses two ask levels
+    print_book(book);
+
+    // market order scenarios
+    submit(Side::Buy,   99,  5);   // resting bid
+    submit(Side::Sell, 102,  4);   // resting ask
+    print_book(book);
+
+    submit(Side::Buy,  0, 10, Type::Market);   // sweeps all asks
+    print_book(book);
+
+    submit(Side::Sell, 0, 20, Type::Market);   // sweeps all bids, partial fill + cancel
     print_book(book);
 
     return 0;
