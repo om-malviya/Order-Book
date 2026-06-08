@@ -14,15 +14,16 @@ std::vector<Trade> OrderBook::add(Order order) {
             while (order.qty > 0 && !level.empty()) {
                 Order& resting = level.front();
                 int fill = std::min(order.qty, resting.qty);
-                trades.push_back({next_trade_id_++, order.id, resting.id, best->first, fill, order.side});
-                order.qty   -= fill;
-                resting.qty -= fill;
-                if (resting.qty == 0) level.pop_front();
+                trades.push_back({next_trade_id_++, order.id, resting.id, level.price, fill, order.side});
+                order.qty -= fill;
+                level.decrement_front(fill);
             }
             if (level.empty()) asks_.erase(best);
         }
-        if (order.qty > 0 && order.rests())
-            bids_[order.price].push_back(order);
+        if (order.qty > 0 && order.rests()) {
+            auto& level = bids_.try_emplace(order.price, order.price).first->second;
+            level.add_order(order);
+        }
 
     } else {
         while (order.qty > 0 && !bids_.empty()) {
@@ -33,15 +34,16 @@ std::vector<Trade> OrderBook::add(Order order) {
             while (order.qty > 0 && !level.empty()) {
                 Order& resting = level.front();
                 int fill = std::min(order.qty, resting.qty);
-                trades.push_back({next_trade_id_++, resting.id, order.id, best->first, fill, order.side});
-                order.qty   -= fill;
-                resting.qty -= fill;
-                if (resting.qty == 0) level.pop_front();
+                trades.push_back({next_trade_id_++, resting.id, order.id, level.price, fill, order.side});
+                order.qty -= fill;
+                level.decrement_front(fill);
             }
             if (level.empty()) bids_.erase(best);
         }
-        if (order.qty > 0 && order.rests())
-            asks_[order.price].push_back(order);
+        if (order.qty > 0 && order.rests()) {
+            auto& level = asks_.try_emplace(order.price, order.price).first->second;
+            level.add_order(order);
+        }
     }
 
     return trades;
@@ -50,15 +52,11 @@ std::vector<Trade> OrderBook::add(Order order) {
 void OrderBook::print() const {
     std::cout << "\n";
     for (auto it = asks_.rbegin(); it != asks_.rend(); ++it) {
-        int total = 0;
-        for (const auto& o : it->second) total += o.qty;
-        std::cout << "  ASK  " << it->first << "   " << total << "\n";
+        std::cout << "  ASK  " << it->first << "   " << it->second.volume() << "\n";
     }
     std::cout << "  ---\n";
     for (const auto& [price, level] : bids_) {
-        int total = 0;
-        for (const auto& o : level) total += o.qty;
-        std::cout << "  BID  " << price << "   " << total << "\n";
+        std::cout << "  BID  " << price << "   " << level.volume() << "\n";
     }
     std::cout << "\n";
 }
