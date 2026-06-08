@@ -5,6 +5,16 @@ int main() {
     OrderBook book;
     int       next_id = 1;
 
+    auto status_str = [](Status s) -> const char* {
+        switch (s) {
+            case Status::Open:            return "Open";
+            case Status::PartiallyFilled: return "PartiallyFilled";
+            case Status::Filled:          return "Filled";
+            case Status::Cancelled:       return "Cancelled";
+        }
+        return "";
+    };
+
     auto submit = [&](Side side, int64_t price, int qty, Type type = Type::Limit) {
         Order o{next_id++, side, price, qty, type};
         std::cout << (side == Side::Buy ? "BUY " : "SELL");
@@ -17,17 +27,21 @@ int main() {
         int filled = 0;
         for (const auto& t : trades) {
             std::cout << "  -> TRADE"
-                      << "  id="       << t.id
-                      << "  buyer="    << t.buyer_id
-                      << "  seller="   << t.seller_id
-                      << "  px="       << t.price
-                      << "  qty="      << t.qty
-                      << "  agg="      << (t.aggressor == Side::Buy ? "BUY" : "SELL")
+                      << "  id="     << t.id
+                      << "  buyer="  << t.buyer_id
+                      << "  seller=" << t.seller_id
+                      << "  px="     << t.price
+                      << "  qty="    << t.qty
+                      << "  agg="    << (t.aggressor == Side::Buy ? "BUY" : "SELL")
                       << "\n";
             filled += t.qty;
         }
         if (!o.rests() && filled < qty)
             std::cout << "  -> CANCELLED  residual qty=" << (qty - filled) << "\n";
+
+        if (const auto* s = book.status(o.id))
+            std::cout << "  -> STATUS   " << status_str(s->status)
+                      << "  filled=" << s->filled_qty << "/" << s->original_qty << "\n";
     };
 
     submit(Side::Buy,  100, 10);
