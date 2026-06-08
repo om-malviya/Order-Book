@@ -14,6 +14,14 @@ struct Order {
     int64_t  price;
     int      qty;
     Type     type = Type::Limit;
+
+    bool crosses(int64_t opposite_price) const {
+        if (type == Type::Market) return true;
+        return (side == Side::Buy) ? price >= opposite_price
+                                   : price <= opposite_price;
+    }
+
+    bool rests() const { return type == Type::Limit; }
 };
 
 struct Trade {
@@ -34,7 +42,7 @@ std::vector<Trade> match(Book& book, Order order) {
     if (order.side == Side::Buy) {
         while (order.qty > 0 && !book.asks.empty()) {
             auto best = book.asks.begin();
-            if (order.type == Type::Limit && order.price < best->first) break;
+            if (!order.crosses(best->first)) break;
 
             auto& level = best->second;
             while (order.qty > 0 && !level.empty()) {
@@ -47,13 +55,13 @@ std::vector<Trade> match(Book& book, Order order) {
             }
             if (level.empty()) book.asks.erase(best);
         }
-        if (order.qty > 0 && order.type == Type::Limit)
+        if (order.qty > 0 && order.rests())
             book.bids[order.price].push_back(order);
 
     } else {
         while (order.qty > 0 && !book.bids.empty()) {
             auto best = book.bids.begin();
-            if (order.type == Type::Limit && order.price > best->first) break;
+            if (!order.crosses(best->first)) break;
 
             auto& level = best->second;
             while (order.qty > 0 && !level.empty()) {
@@ -66,7 +74,7 @@ std::vector<Trade> match(Book& book, Order order) {
             }
             if (level.empty()) book.bids.erase(best);
         }
-        if (order.qty > 0 && order.type == Type::Limit)
+        if (order.qty > 0 && order.rests())
             book.asks[order.price].push_back(order);
     }
 
@@ -110,7 +118,7 @@ int main() {
                       << "  qty="             << t.qty << "\n";
             filled += t.qty;
         }
-        if (type == Type::Market && filled < qty)
+        if (!o.rests() && filled < qty)
             std::cout << "  -> CANCELLED  residual qty=" << (qty - filled) << "\n";
     };
 
