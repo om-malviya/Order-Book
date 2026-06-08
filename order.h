@@ -1,9 +1,8 @@
 #pragma once
 #include <cstdint>
 
-enum class Side   { Buy, Sell };
-enum class Type   { Limit, Market };
-enum class Status { Open, PartiallyFilled, Filled, Cancelled };
+enum class Side { Buy, Sell };
+enum class Type { Limit, Market };
 
 struct Order {
     int      id;
@@ -19,13 +18,4 @@ struct Order {
     }
 
     bool rests() const { return type == Type::Limit; }
-};
-
-struct OrderStatus {
-    int    order_id;
-    Status status;
-    int    original_qty;
-    int    filled_qty;
-
-    int remaining() const { return original_qty - filled_qty; }
 };

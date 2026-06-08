@@ -1,47 +1,19 @@
-#include <iostream>
 #include "orderbook.h"
+#include "cli.h"
 
 int main() {
+    cli::init();
+
     OrderBook book;
     int       next_id = 1;
 
-    auto status_str = [](Status s) -> const char* {
-        switch (s) {
-            case Status::Open:            return "Open";
-            case Status::PartiallyFilled: return "PartiallyFilled";
-            case Status::Filled:          return "Filled";
-            case Status::Cancelled:       return "Cancelled";
-        }
-        return "";
-    };
-
     auto submit = [&](Side side, int64_t price, int qty, Type type = Type::Limit) {
         Order o{next_id++, side, price, qty, type};
-        std::cout << (side == Side::Buy ? "BUY " : "SELL");
-        if (type == Type::Market)
-            std::cout << "  id=" << o.id << "  px=MKT  qty=" << qty << "\n";
-        else
-            std::cout << "  id=" << o.id << "  px=" << price << "  qty=" << qty << "\n";
-
-        auto trades = book.add(o);
-        int filled = 0;
-        for (const auto& t : trades) {
-            std::cout << "  -> TRADE"
-                      << "  id="     << t.id
-                      << "  buyer="  << t.buyer_id
-                      << "  seller=" << t.seller_id
-                      << "  px="     << t.price
-                      << "  qty="    << t.qty
-                      << "  agg="    << (t.aggressor == Side::Buy ? "BUY" : "SELL")
-                      << "\n";
-            filled += t.qty;
-        }
-        if (!o.rests() && filled < qty)
-            std::cout << "  -> CANCELLED  residual qty=" << (qty - filled) << "\n";
-
+        cli::order_submitted(o);
+        for (const auto& t : book.add(o))
+            cli::trade(t);
         if (const auto* s = book.status(o.id))
-            std::cout << "  -> STATUS   " << status_str(s->status)
-                      << "  filled=" << s->filled_qty << "/" << s->original_qty << "\n";
+            cli::order_status(*s);
     };
 
     submit(Side::Buy,  100, 10);

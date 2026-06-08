@@ -1,5 +1,5 @@
 #include "orderbook.h"
-#include <iostream>
+#include "cli.h"
 #include <algorithm>
 
 std::vector<Trade> OrderBook::add(Order order) {
@@ -77,11 +77,8 @@ const OrderStatus* OrderBook::status(int order_id) const {
 }
 
 void OrderBook::print() const {
-    std::cout << "\n";
-    for (auto it = asks_.rbegin(); it != asks_.rend(); ++it)
-        std::cout << "  ASK  " << it->first << "   " << it->second.volume() << "\n";
-    std::cout << "  ---\n";
-    for (const auto& [price, level] : bids_)
-        std::cout << "  BID  " << price << "   " << level.volume() << "\n";
-    std::cout << "\n";
+    std::vector<cli::Level> asks, bids;
+    for (const auto& [price, level] : asks_) asks.push_back({price, level.volume()});
+    for (const auto& [price, level] : bids_) bids.push_back({price, level.volume()});
+    cli::render_book(asks, bids);
 }
