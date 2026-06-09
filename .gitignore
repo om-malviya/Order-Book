@@ -10,6 +10,9 @@ orderbook
 build/
 dist/
 
+# CMake generated (machine-specific paths)
+compile_commands.json
+
 # IDE
 .vscode/
 .idea/
