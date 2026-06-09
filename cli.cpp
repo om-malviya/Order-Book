@@ -96,7 +96,7 @@ void cli::order_status(const OrderStatus& s) {
     line << "    " << paint("└ ", GREY)
          << paint(status_word(s.status), status_color(s.status)) << "  ";
     if (s.status == Status::Cancelled) {
-        line << "filled " << s.filled_qty << "  cancelled " << s.remaining();
+        line << "filled " << s.filled_qty << "/" << s.original_qty << "  cancelled " << s.remaining() << "/" << s.original_qty;
     } else {
         line << s.filled_qty << "/" << s.original_qty;
     }
