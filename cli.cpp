@@ -94,10 +94,12 @@ void cli::trade(const Trade& t) {
 void cli::order_status(const OrderStatus& s) {
     std::ostringstream line;
     line << "    " << paint("└ ", GREY)
-         << paint(status_word(s.status), status_color(s.status))
-         << "  " << s.filled_qty << "/" << s.original_qty;
-    if (s.status == Status::Cancelled && s.remaining() > 0)
-        line << "  (residual " << s.remaining() << ")";
+         << paint(status_word(s.status), status_color(s.status)) << "  ";
+    if (s.status == Status::Cancelled) {
+        line << "filled " << s.filled_qty << "  cancelled " << s.remaining();
+    } else {
+        line << s.filled_qty << "/" << s.original_qty;
+    }
     std::cout << line.str() << "\n";
 }
 
