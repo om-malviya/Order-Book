@@ -24,4 +24,22 @@ struct Level {
 void render_book(const std::vector<Level>& asks_ascending,
                  const std::vector<Level>& bids_descending);
 
+// --- Interactive console views ---
+
+void banner();
+void start_menu();
+void menu();
+void help();
+
+void render_trades(const std::vector<Trade>& history);
+
+struct StatusRow {
+    int         id;
+    Side        side;
+    int64_t     price;
+    bool        is_market;
+    OrderStatus status;
+};
+void render_statuses(const std::vector<StatusRow>& rows);
+
 }  // namespace cli

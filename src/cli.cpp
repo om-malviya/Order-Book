@@ -32,6 +32,12 @@ std::string rjust(int64_t v, int width) {
     return o.str();
 }
 
+std::string rjust_str(const std::string& s, int width) {
+    std::ostringstream o;
+    o << std::setw(width) << s;
+    return o.str();
+}
+
 const char* status_word(Status s) {
     switch (s) {
         case Status::Open:            return "Open";
@@ -138,4 +144,80 @@ void cli::render_book(const std::vector<Level>& asks, const std::vector<Level>& 
                   << "   " << paint(depth_bar(l.volume, max_vol), GREEN) << "\n";
 
     std::cout << "\n";
+}
+
+void cli::banner() {
+    std::cout << "\n" << paint("  ORDER BOOK ENGINE", BOLD) << "\n"
+              << paint("  a small price-time matching engine", DIM) << "\n\n";
+}
+
+void cli::start_menu() {
+    std::cout << "  Start session:\n"
+              << "   1) Demo\n"
+              << "   2) Interactive\n";
+}
+
+void cli::menu() {
+    std::cout << "\n" << paint("  === ORDER BOOK CONSOLE ===", BOLD) << "\n"
+              << "   1) Place order\n"
+              << "   2) View order book\n"
+              << "   3) Order status\n"
+              << "   4) Trade history\n"
+              << "   5) Help\n"
+              << "   0) Quit\n";
+}
+
+void cli::help() {
+    std::cout << "\n" << paint("  HELP", BOLD) << "\n"
+              << "   " << paint("Place order", GREEN)  << "  pick a type, then a side, then price (limit only) and size.\n"
+              << "   " << paint("Limit", GREEN)        << "        rests on the book until it crosses; you set the price.\n"
+              << "   " << paint("Market", GREEN)       << "       takes liquidity immediately; unfilled size is cancelled.\n"
+              << "   " << paint("View book", GREEN)    << "    shows resting depth: asks above the spread, bids below.\n"
+              << "   " << paint("Order status", GREEN) << " tracks each order: " << paint("Open", CYAN) << " / "
+              << paint("PartiallyFilled", YELLOW) << " / " << paint("Filled", GREEN) << " / " << paint("Cancelled", GREY) << ".\n"
+              << "   " << paint("Trade history", GREEN)<< " lists every fill produced this session.\n"
+              << "   " << paint("Inputs are numbers", DIM) << ": type " << paint("1", GREEN) << " (Limit) / "
+              << paint("2", GREEN) << " (Market), side " << paint("1", GREEN) << " (Buy) / " << paint("2", RED) << " (Sell).\n";
+}
+
+void cli::render_trades(const std::vector<Trade>& history) {
+    std::cout << "\n" << paint("  TRADE HISTORY", BOLD) << "\n";
+    if (history.empty()) {
+        std::cout << paint("  (no trades yet)", DIM) << "\n";
+        return;
+    }
+    std::cout << paint("       ID     PRICE    SIZE   BUYER  SELLER", DIM) << "\n";
+    for (const auto& t : history) {
+        const char* agg_color = (t.aggressor == Side::Buy) ? GREEN : RED;
+        std::ostringstream id_col;
+        id_col << "#" << t.id;
+        std::cout << "  " << paint(rjust_str(id_col.str(), 5), agg_color)
+                  << rjust(t.price, 9) << rjust(t.qty, 8)
+                  << rjust(t.buyer_id, 8) << rjust(t.seller_id, 8) << "\n";
+    }
+}
+
+void cli::render_statuses(const std::vector<StatusRow>& rows) {
+    std::cout << "\n" << paint("  ORDERS", BOLD) << "\n";
+    if (rows.empty()) {
+        std::cout << paint("  (no orders yet)", DIM) << "\n";
+        return;
+    }
+    std::cout << paint("    ID  SIDE     PRICE   FILLED   STATUS", DIM) << "\n";
+    for (const auto& r : rows) {
+        const char* side_color = (r.side == Side::Buy) ? GREEN : RED;
+        std::string side_tag    = (r.side == Side::Buy) ? "BUY " : "SELL";
+
+        std::ostringstream price_col;
+        if (r.is_market) price_col << std::setw(8) << "market";
+        else             price_col << std::setw(8) << r.price;
+
+        std::ostringstream fill_col;
+        fill_col << r.status.filled_qty << "/" << r.status.original_qty;
+
+        std::cout << "  " << rjust(r.id, 3) << "  " << paint(side_tag, side_color)
+                  << "  " << price_col.str()
+                  << "  " << std::left << std::setw(7) << fill_col.str() << std::right
+                  << "  " << paint(status_word(r.status.status), status_color(r.status.status)) << "\n";
+    }
 }
