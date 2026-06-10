@@ -14,7 +14,11 @@ target_include_directories(engine PUBLIC include)
 target_compile_options(engine PRIVATE -Wall -Wextra)
 
 # --- App ---
-add_executable(orderbook src/main.cpp)
+add_executable(orderbook
+    src/main.cpp
+    src/console.cpp
+    src/demo.cpp
+)
 target_link_libraries(orderbook PRIVATE engine)
 target_compile_options(orderbook PRIVATE -Wall -Wextra)
 
