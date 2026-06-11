@@ -1,10 +1,12 @@
 #include "console.h"
 #include "orderbook.h"
 #include "cli.h"
+#include "ticks.h"
 #include <iostream>
 #include <string>
 #include <vector>
 #include <optional>
+#include <cmath>
 
 namespace {
 
@@ -52,6 +54,24 @@ std::optional<long long> read_positive(const char* prompt, const char* label, bo
         return std::nullopt;
     }
     return v;
+}
+
+std::optional<int64_t> read_price(bool& eof) {
+    std::string line;
+    if (!read_line("  Price> ", line)) { eof = true; return std::nullopt; }
+    std::string t = trim(line);
+    try {
+        size_t pos = 0;
+        double d = std::stod(t, &pos);
+        if (pos != t.size() || d <= 0) {
+            std::cout << "  Price must be a positive number (e.g. 100.50). Cancelled.\n";
+            return std::nullopt;
+        }
+        return static_cast<int64_t>(std::llround(d * TICK_SCALE));
+    } catch (...) {
+        std::cout << "  Price must be a positive number (e.g. 100.50). Cancelled.\n";
+        return std::nullopt;
+    }
 }
 
 std::optional<Type> read_type(bool& eof) {
@@ -104,7 +124,7 @@ bool place_order(Session& s) {
 
     int64_t price = 0;
     if (*type == Type::Limit) {
-        auto p = read_positive("  Price> ", "Price", eof);
+        auto p = read_price(eof);
         if (eof) return false;
         if (!p) return true;
         price = *p;

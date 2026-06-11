@@ -15,20 +15,20 @@ void demo::run() {
             cli::order_status(*s);
     };
 
-    submit(Side::Buy,  100, 10);
-    submit(Side::Buy,  100,  5);
-    submit(Side::Buy,   99,  8);
-    submit(Side::Sell, 101,  3);
+    submit(Side::Buy,  10000, 10);
+    submit(Side::Buy,  10000,  5);
+    submit(Side::Buy,   9900,  8);
+    submit(Side::Sell, 10100,  3);
     book.print();
 
-    submit(Side::Sell, 100, 20);
+    submit(Side::Sell, 10000, 20);
     book.print();
 
-    submit(Side::Buy,  101,  6);
+    submit(Side::Buy,  10100,  6);
     book.print();
 
-    submit(Side::Buy,   99,  5);
-    submit(Side::Sell, 102,  4);
+    submit(Side::Buy,   9900,  5);
+    submit(Side::Sell, 10200,  4);
     book.print();
 
     submit(Side::Buy,  0, 10, Type::Market);

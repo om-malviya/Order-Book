@@ -1,4 +1,5 @@
 #include "cli.h"
+#include "ticks.h"
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -35,6 +36,12 @@ std::string rjust(int64_t v, int width) {
 std::string rjust_str(const std::string& s, int width) {
     std::ostringstream o;
     o << std::setw(width) << s;
+    return o.str();
+}
+
+std::string fmt_price(int64_t ticks) {
+    std::ostringstream o;
+    o << std::fixed << std::setprecision(2) << (static_cast<double>(ticks) / TICK_SCALE);
     return o.str();
 }
 
@@ -80,7 +87,7 @@ void cli::order_submitted(const Order& o) {
     line << paint(">", BOLD) << " " << paint(side_tag, side_color)
          << "  #" << o.id << "  ";
     if (o.type == Type::Market) line << "market";
-    else                        line << "limit " << o.price;
+    else                        line << "limit " << fmt_price(o.price);
     line << " x " << o.qty;
     std::cout << line.str() << "\n";
 }
@@ -91,7 +98,7 @@ void cli::trade(const Trade& t) {
 
     std::ostringstream line;
     line << "    " << paint("TRADE", BOLD) << " #" << t.id
-         << "  " << t.price << " x " << t.qty
+         << "  " << fmt_price(t.price) << " x " << t.qty
          << "  buyer " << t.buyer_id << "  seller " << t.seller_id
          << "  " << paint(std::string("[") + agg_word + " aggressor]", agg_color);
     std::cout << line.str() << "\n";
@@ -121,16 +128,17 @@ void cli::render_book(const std::vector<Level>& asks, const std::vector<Level>& 
     // asks highest-first so best ask sits just above the spread
     for (auto it = asks.rbegin(); it != asks.rend(); ++it)
         std::cout << "  " << paint("ASK", RED)
-                  << rjust(it->price, 8) << "  " << rjust(it->volume, 7)
+                  << rjust_str(fmt_price(it->price), 9) << "  " << rjust(it->volume, 7)
                   << "   " << paint(depth_bar(it->volume, max_vol), RED) << "\n";
 
     if (!asks.empty() && !bids.empty()) {
         int64_t best_ask = asks.front().price;
         int64_t best_bid = bids.front().price;
+        double  spread   = static_cast<double>(best_ask - best_bid) / TICK_SCALE;
+        double  mid      = static_cast<double>(best_ask + best_bid) / 2.0 / TICK_SCALE;
         std::ostringstream div;
-        div << "  ----------------------------  spread " << (best_ask - best_bid)
-            << "  mid " << std::fixed << std::setprecision(1)
-            << (best_ask + best_bid) / 2.0;
+        div << "  ----------------------------  spread " << std::fixed << std::setprecision(2)
+            << spread << "  mid " << mid;
         std::cout << paint(div.str(), GREY) << "\n";
     } else if (asks.empty() && bids.empty()) {
         std::cout << paint("  (empty book)", DIM) << "\n";
@@ -140,7 +148,7 @@ void cli::render_book(const std::vector<Level>& asks, const std::vector<Level>& 
 
     for (const auto& l : bids)
         std::cout << "  " << paint("BID", GREEN)
-                  << rjust(l.price, 8) << "  " << rjust(l.volume, 7)
+                  << rjust_str(fmt_price(l.price), 9) << "  " << rjust(l.volume, 7)
                   << "   " << paint(depth_bar(l.volume, max_vol), GREEN) << "\n";
 
     std::cout << "\n";
@@ -186,13 +194,13 @@ void cli::render_trades(const std::vector<Trade>& history) {
         std::cout << paint("  (no trades yet)", DIM) << "\n";
         return;
     }
-    std::cout << paint("       ID     PRICE    SIZE   BUYER  SELLER", DIM) << "\n";
+    std::cout << paint("       ID       PRICE    SIZE   BUYER  SELLER", DIM) << "\n";
     for (const auto& t : history) {
         const char* agg_color = (t.aggressor == Side::Buy) ? GREEN : RED;
         std::ostringstream id_col;
         id_col << "#" << t.id;
         std::cout << "  " << paint(rjust_str(id_col.str(), 5), agg_color)
-                  << rjust(t.price, 9) << rjust(t.qty, 8)
+                  << rjust_str(fmt_price(t.price), 9) << rjust(t.qty, 8)
                   << rjust(t.buyer_id, 8) << rjust(t.seller_id, 8) << "\n";
     }
 }
@@ -209,8 +217,8 @@ void cli::render_statuses(const std::vector<StatusRow>& rows) {
         std::string side_tag    = (r.side == Side::Buy) ? "BUY " : "SELL";
 
         std::ostringstream price_col;
-        if (r.is_market) price_col << std::setw(8) << "market";
-        else             price_col << std::setw(8) << r.price;
+        if (r.is_market) price_col << std::setw(9) << "market";
+        else             price_col << std::setw(9) << fmt_price(r.price);
 
         std::ostringstream fill_col;
         fill_col << r.status.filled_qty << "/" << r.status.original_qty;
