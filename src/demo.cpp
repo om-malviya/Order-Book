@@ -56,4 +56,16 @@ void demo::run() {
 
     // --- Session summary ---
     cli::render_trades(all_trades);
+
+    cli::Stats st;
+    st.orders_submitted = next_id - 1;
+    st.trades_executed  = static_cast<int>(all_trades.size());
+    int64_t price_sum   = 0;
+    for (const auto& t : all_trades) {
+        st.volume_traded += t.qty;
+        price_sum        += t.price * t.qty;
+    }
+    if (st.volume_traded > 0)
+        st.avg_price_ticks = price_sum / st.volume_traded;
+    cli::render_stats(st);
 }
