@@ -204,3 +204,38 @@ TEST_CASE("Unknown order id returns nullptr", "[status]") {
     OrderBook book;
     CHECK(book.status(999) == nullptr);
 }
+
+// ---------------------------------------------------------------------------
+// Edge cases
+// ---------------------------------------------------------------------------
+
+TEST_CASE("Sell sweeps two resting buys at same price, second partially filled", "[matching]") {
+    OrderBook book;
+    book.add(buy(1, 100, 5));
+    book.add(buy(2, 100, 5));
+    auto trades = book.add(sell(3, 100, 8));
+
+    REQUIRE(trades.size() == 2);
+    CHECK(trades[0].buyer_id == 1);
+    CHECK(trades[0].qty      == 5);
+    CHECK(trades[1].buyer_id == 2);
+    CHECK(trades[1].qty      == 3);
+    CHECK(book.status(1)->status     == Status::Filled);
+    CHECK(book.status(2)->status     == Status::PartiallyFilled);
+    CHECK(book.status(2)->remaining() == 2);
+    CHECK(book.status(3)->status     == Status::Filled);
+}
+
+TEST_CASE("Incoming limit sweeps two ask levels, remainder rests as PartiallyFilled", "[matching]") {
+    OrderBook book;
+    book.add(sell(1, 100, 3));
+    book.add(sell(2, 101, 5));
+    auto trades = book.add(buy(3, 102, 12));
+
+    REQUIRE(trades.size() == 2);
+    CHECK(trades[0].price == 100);
+    CHECK(trades[1].price == 101);
+    CHECK(book.status(3)->filled_qty  == 8);
+    CHECK(book.status(3)->remaining() == 4);
+    CHECK(book.status(3)->status      == Status::PartiallyFilled);
+}
