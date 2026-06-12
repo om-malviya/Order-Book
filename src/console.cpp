@@ -166,6 +166,20 @@ bool show_status(Session& s) {
     return true;
 }
 
+cli::Stats compute_stats(const Session& s) {
+    cli::Stats st;
+    st.orders_submitted = static_cast<int>(s.submitted.size());
+    st.trades_executed  = static_cast<int>(s.history.size());
+    int64_t price_sum = 0;
+    for (const auto& t : s.history) {
+        st.volume_traded += t.qty;
+        price_sum        += t.price * t.qty;
+    }
+    if (st.volume_traded > 0)
+        st.avg_price_ticks = price_sum / st.volume_traded;
+    return st;
+}
+
 }  // namespace
 
 void console::run() {
@@ -182,10 +196,12 @@ void console::run() {
         else if (c == "2") s.book.print();
         else if (c == "3") running = show_status(s);
         else if (c == "4") cli::render_trades(s.history);
-        else if (c == "5") cli::help();
+        else if (c == "5") cli::render_stats(compute_stats(s));
+        else if (c == "6") cli::help();
         else if (c == "0" || c == "q" || c == "quit") running = false;
         else if (!c.empty()) std::cout << "  Unknown option '" << c << "'. Type 6 for help.\n";
     }
 
-    std::cout << "\n  Goodbye.\n";
+    cli::render_stats(compute_stats(s));
+    std::cout << "  Goodbye.\n";
 }

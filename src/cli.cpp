@@ -171,19 +171,21 @@ void cli::menu() {
               << "   2) View order book\n"
               << "   3) Order status\n"
               << "   4) Trade history\n"
-              << "   5) Help\n"
+              << "   5) Stats\n"
+              << "   6) Help\n"
               << "   0) Quit\n";
 }
 
 void cli::help() {
     std::cout << "\n" << paint("  HELP", BOLD) << "\n"
-              << "   " << paint("Place order", GREEN)  << "  pick a type, then a side, then price (limit only) and size.\n"
-              << "   " << paint("Limit", GREEN)        << "        rests on the book until it crosses; you set the price.\n"
-              << "   " << paint("Market", GREEN)       << "       takes liquidity immediately; unfilled size is cancelled.\n"
-              << "   " << paint("View book", GREEN)    << "    shows resting depth: asks above the spread, bids below.\n"
-              << "   " << paint("Order status", GREEN) << " tracks each order: " << paint("Open", CYAN) << " / "
+              << "   " << paint("1 Place order", GREEN)   << "   pick a type, then a side, then price (limit only) and size.\n"
+              << "     " << paint("Limit", GREEN)         << "         rests on the book until it crosses; you set the price.\n"
+              << "     " << paint("Market", GREEN)        << "        takes liquidity immediately; unfilled size is cancelled.\n"
+              << "   " << paint("2 View book", GREEN)     << "     shows resting depth: asks above the spread, bids below.\n"
+              << "   " << paint("3 Order status", GREEN)  << "  tracks each order: " << paint("Open", CYAN) << " / "
               << paint("PartiallyFilled", YELLOW) << " / " << paint("Filled", GREEN) << " / " << paint("Cancelled", GREY) << ".\n"
-              << "   " << paint("Trade history", GREEN)<< " lists every fill produced this session.\n"
+              << "   " << paint("4 Trade history", GREEN) << " lists every fill produced this session.\n"
+              << "   " << paint("5 Stats", GREEN)         << "         order and fill summary for this session.\n"
               << "   " << paint("Inputs are numbers", DIM) << ": type " << paint("1", GREEN) << " (Limit) / "
               << paint("2", GREEN) << " (Market), side " << paint("1", GREEN) << " (Buy) / " << paint("2", RED) << " (Sell).\n";
 }
@@ -203,6 +205,18 @@ void cli::render_trades(const std::vector<Trade>& history) {
                   << rjust_str(fmt_price(t.price), 9) << rjust(t.qty, 8)
                   << rjust(t.buyer_id, 8) << rjust(t.seller_id, 8) << "\n";
     }
+}
+
+void cli::render_stats(const Stats& s) {
+    std::cout << "\n" << paint("  SESSION STATS", BOLD) << "\n";
+    std::cout << "  Orders submitted: " << rjust(s.orders_submitted, 4) << "\n";
+    std::cout << "  Trades executed:  " << rjust(s.trades_executed,  4) << "\n";
+    std::cout << "  Total volume:     " << rjust(s.volume_traded,    4) << "\n";
+    if (s.trades_executed > 0)
+        std::cout << "  Avg fill price:  " << rjust_str(fmt_price(s.avg_price_ticks), 7) << "\n";
+    else
+        std::cout << paint("  (no fills this session)", DIM) << "\n";
+    std::cout << "\n";
 }
 
 void cli::render_statuses(const std::vector<StatusRow>& rows) {

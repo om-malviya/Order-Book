@@ -42,4 +42,12 @@ struct StatusRow {
 };
 void render_statuses(const std::vector<StatusRow>& rows);
 
+struct Stats {
+    int     orders_submitted = 0;
+    int     trades_executed  = 0;
+    int     volume_traded    = 0;
+    int64_t avg_price_ticks  = 0; // 0 means no trades
+};
+void render_stats(const Stats& stats);
+
 }  // namespace cli
