@@ -19,38 +19,39 @@ void demo::run() {
             cli::order_status(*s);
     };
 
-    // --- 1. Build a two-sided resting book ---
+    // --- 1. Build a two-sided resting book (5 asks, 5 bid levels) ---
     std::cout << "\n--- Building resting depth ---\n";
-    submit(Side::Buy,  10000, 10);
-    submit(Side::Buy,  10000,  5);
-    submit(Side::Buy,   9900,  8);
-    submit(Side::Sell, 10100,  3);
+    submit(Side::Sell, 10250,  2);   // 102.50 thin offer
+    submit(Side::Sell, 10200,  4);   // 102.00
+    submit(Side::Sell, 10150,  7);   // 101.50
+    submit(Side::Sell, 10100,  6);   // 101.00
+    submit(Side::Sell, 10050,  3);   // 100.50 near-touch
+    submit(Side::Buy,  10000, 10);   // 100.00 first order
+    submit(Side::Buy,  10000,  5);   // 100.00 second order (FIFO)
+    submit(Side::Buy,   9950,  8);   //  99.50
+    submit(Side::Buy,   9900,  6);   //  99.00
+    submit(Side::Buy,   9850,  4);   //  98.50
+    submit(Side::Buy,   9800,  2);   //  98.00 thin bid
     book.print();
 
-    // --- 2. Aggressive sell crosses the bid; partial fills, remainder rests ---
-    std::cout << "--- Sell 20 at 100.00 crosses the 100.00 bid ---\n";
+    // --- 2. Sell crosses the 100.00 bid; remainder rests on ask ---
+    std::cout << "--- Sell 20 at 100.00 crosses both 100.00 bids ---\n";
     submit(Side::Sell, 10000, 20);
     book.print();
 
-    // --- 3. Aggressive buy sweeps the ask at 101.00 ---
-    std::cout << "--- Buy 6 at 101.00 sweeps the ask ---\n";
-    submit(Side::Buy,  10100,  6);
+    // --- 3. Buy sweeps three ask levels; remainder rests ---
+    std::cout << "--- Buy 16 at 101.00 sweeps three ask levels ---\n";
+    submit(Side::Buy, 10100, 16);
     book.print();
 
-    // --- 4. Add more resting depth on both sides ---
-    std::cout << "--- Adding resting depth ---\n";
-    submit(Side::Buy,   9900,  5);
-    submit(Side::Sell, 10200,  4);
+    // --- 4. Market sell drains top bids ---
+    std::cout << "--- Market sell 12 takes best bids ---\n";
+    submit(Side::Sell, 0, 12, Type::Market);
     book.print();
 
-    // --- 5. Market buy takes all available liquidity ---
-    std::cout << "--- Market buy 10 takes best ask ---\n";
-    submit(Side::Buy,  0, 10, Type::Market);
-    book.print();
-
-    // --- 6. Market sell drains remaining bids ---
-    std::cout << "--- Market sell 20 drains bids ---\n";
-    submit(Side::Sell, 0, 20, Type::Market);
+    // --- 5. Market buy clears remaining asks ---
+    std::cout << "--- Market buy 10 takes remaining asks ---\n";
+    submit(Side::Buy, 0, 10, Type::Market);
     book.print();
 
     // --- Session summary ---
