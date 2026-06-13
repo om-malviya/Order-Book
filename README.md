@@ -2,7 +2,7 @@
 
 I wrote this to understand how matching engines work. The kind that sit at the core of an exchange. It's a two-sided limit order book in C++20: buy and sell orders come in, cross if they can, and the leftovers wait. The engine returns trade events; a separate layer handles all output.
 
-<img src="docs/images/demo-build.png" width="480" alt="Order submission lines and resulting book ladder after the first demo scenario">
+<img src="assets/images/demo-build.png" width="480" alt="Order submission lines and resulting book ladder after the first demo scenario">
 
 ---
 
@@ -28,7 +28,7 @@ ctest --test-dir build      # 19/19
 
 You need a C++20 compiler and CMake >= 3.16. Catch2 is downloaded automatically at configure time.
 
-<img src="docs/images/startup.png" width="420" alt="Startup banner and mode selection menu">
+<img src="assets/images/startup.png" width="420" alt="Startup banner and mode selection menu">
 
 Choosing **Demo** runs a scripted scenario: a book builds up across several price levels, then limit and market orders sweep through it. No typing required, good for seeing the matching in action.
 
@@ -44,7 +44,7 @@ Sells work the same in reverse, walking from the highest bid downward.
 
 The fills always happen at the **resting order's price**. In the screenshot below, a market buy for 10 hits the asks in order: 7 units at 101.50, then 3 units at 102.00. The market order has no price of its own; it just takes whatever the resting orders were already offering.
 
-<img src="docs/images/market-sweep.png" width="580" alt="Market buy sweeping two ask levels, two trade lines, book before and after">
+<img src="assets/images/market-sweep.png" width="580" alt="Market buy sweeping two ask levels, two trade lines, book before and after">
 
 After matching, remaining limit quantity goes onto the book. Remaining market quantity is cancelled.
 
@@ -52,7 +52,7 @@ After matching, remaining limit quantity goes onto the book. Remaining market qu
 
 ## The depth display
 
-<img src="docs/images/book-ladder.png" width="500" alt="Depth ladder: 5 ask levels in red, spread and mid, 5 bid levels in green">
+<img src="assets/images/book-ladder.png" width="500" alt="Depth ladder: 5 ask levels in red, spread and mid, 5 bid levels in green">
 
 Each row is one resting price level:
 
@@ -66,7 +66,7 @@ The bar scales to the largest level in the book. The spread line shows best ask 
 
 ## Interactive console
 
-<img src="docs/images/menu.png" width="480" alt="Interactive console menu with all seven options">
+<img src="assets/images/menu.png" width="480" alt="Interactive console menu with all seven options">
 
 | # | Action |
 |---|--------|
@@ -77,9 +77,9 @@ The bar scales to the largest level in the book. The spread line shows best ask 
 | 5 | Session stats |
 | 6 | Help |
 
-<img src="docs/images/trade-history.png" width="540" alt="Trade history table with colored aggressor IDs">
+<img src="assets/images/trade-history.png" width="540" alt="Trade history table with colored aggressor IDs">
 
-<img src="docs/images/stats.png" width="360" alt="Session stats panel: orders, trades, volume, and average fill price">
+<img src="assets/images/stats.png" width="360" alt="Session stats panel: orders, trades, volume, and average fill price">
 
 ---
 
@@ -182,5 +182,5 @@ After every `add()` call:
 include/    order.h  price_level.h  trade.h  order_status.h  ticks.h  orderbook.h  cli.h
 src/        orderbook.cpp  cli.cpp  console.cpp  demo.cpp  main.cpp
 tests/      test_orderbook.cpp
-docs/       images/
+assets/       images/
 ```
